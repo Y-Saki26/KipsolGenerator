@@ -146,14 +146,150 @@ fabric.Canvas.prototype.drawEOW = function(centerX, centerY){
 ///////////////////////////////////////////////////////////////////////////////
 /** TODO
  * protptypeを書き換えるよりclassを作る
- * 最初の要素の描画でlineが入ることがある(cf. subulok)．最初を分けて処理したほうが良い 
- * 先にオブジェクトの相対位置の計算を済ませてからリストを参照して描画したほうが良さそう
- * 語末文字に線が侵入する問題
+ * [v] 最初の要素の描画でlineが入ることがある(cf. subulok)．最初を分けて処理したほうが良い 
+ * [v] 先にオブジェクトの相対位置の計算を済ませてからリストを参照して描画したほうが良さそう
+ * [v] 語末文字に線が侵入する問題
  * 文章組版の実装
  * 部位サイズ，キャンバスサイズ変更機能の実装
  * 数字，ピリオドの実装
+ * 歯車モチーフなので回したい
  */
 ///////////////////////////////////////////////////////////////////////////////
+
+function calcItemList(canvas, str, startX=0, startY=0){
+    let cur = {
+        X: startX,
+        Y: startY,
+        radius: 0,
+        direction: 0
+    };
+    let area = {
+        minX: 0,
+        maxX: 0,
+        minY: 0,
+        maxY: 0,
+        append: function(x, y, r){
+            this.minX = Math.min(this.minX, x-r);
+            this.maxX = Math.max(this.maxX, x+r);
+            this.minY = Math.min(this.minY, y-r);
+            this.maxY = Math.max(this.maxY, y+r);
+            //console.log("append:", x, y, r, this);
+        }
+    };
+    let items = [];
+    //console.log(area, items);
+    Array.from(str).forEach((s)=>{
+        s = s.toUpperCase();
+        if("IOU".includes(s)){
+            // vowel
+            if(items.length===0){
+                console.log("Error: unexpected input (initial vowel)");
+                errState = -1;
+                return errState;
+            }
+            if(items.slice(-1)[0].type==="vowel"){
+                console.log("Error: unexpected input (continuous vowel)", s);
+                errState = -1;
+                return errState;
+            }
+            cur.direction = canvas.kipsol.voweldir[s];
+            if(cur.direction==undefined){
+                console.log("Unexpected error", s);
+                errState = -1;
+                return errState;
+            }
+            items.push({
+                type: "vowel",
+                str: s,
+                dir: cur.direction
+            });
+        }else if("ZDGBLNSTKP".includes(s)){
+            // consonant
+            const nextR = ("STKP".includes(s))? canvas.kipsol.radiusVoiceless: canvas.kipsol.radiusVoiced;
+            let dist, nextX, nextY;
+            if(items.length===0){
+                dist = 0;
+                nextX = cur.X;
+                nextY = cur.Y;
+            }else{
+                dist = cur.radius + nextR;
+                if(items.slice(-1)[0].type==="consonant"){
+                    dist += canvas.kipsol.consonantPadding;
+                }
+                nextX = cur.X + dist * Math.cos(cur.direction / 180 * Math.PI);
+                nextY = cur.Y + dist * Math.sin(cur.direction / 180 * Math.PI);
+            }
+            if(items.length>0 && items.slice(-1)[0].type==="consonant"){
+                items.push({
+                    type: "line",
+                    startX: cur.X,
+                    startY: cur.Y,
+                    endX: nextX,
+                    endY: nextY
+                });
+            }
+            items.push({
+                type: "consonant",
+                str: s,
+                centerX: nextX,
+                centerY: nextY,
+                radius: nextR
+            });
+            area.append(nextX, nextY, nextR);
+            cur.X = nextX;
+            cur.Y = nextY;
+            cur.radius = nextR;
+            cur.direction = canvas.kipsol.voweldir["O"];
+        }else{
+            console.log("Error: unexpected input", s);
+            errState = -1;
+            return errState;
+        }
+        //console.log(area, items.slice(-1)[0]);
+    });
+    {
+        // end of word
+        const nextR = canvas.kipsol.radiusEOW;
+        let dist, nextX, nextY;
+        if(items.length===0){
+            dist = 0;
+            nextX = cur.X;
+            nextY = cur.Y;
+            console.log("Warning: blank word");
+            errState = -1;
+        }else{
+            dist = cur.radius + nextR;
+            if(items.slice(-1)[0].type==="consonant"){
+                dist += canvas.kipsol.consonantPadding;
+            }
+            nextX = cur.X + dist * Math.cos(cur.direction / 180 * Math.PI);
+            nextY = cur.Y + dist * Math.sin(cur.direction / 180 * Math.PI);
+        }
+        if(items.length>0 && items.slice(-1)[0].type==="consonant"){
+            _nxtX = cur.X + (dist - nextR) * Math.cos(cur.direction / 180 * Math.PI);
+            _nxtY = cur.Y + (dist - nextR) * Math.sin(cur.direction / 180 * Math.PI);
+            items.push({
+                type: "line",
+                startX: cur.X,
+                startY: cur.Y,
+                endX: _nxtX,
+                endY: _nxtY
+            });
+        }
+        items.push({
+            type: "EOW",
+            centerX: nextX,
+            centerY: nextY,
+            radius: nextR
+        });
+        area.append(nextX, nextY, nextR);
+        //console.log(area, items.slice(-1)[0]);
+    }
+    return {
+        items: items,
+        area: area
+    };
+}
 
 function calcTextArea(canvas, str, startX=0, startY=0){
     let cur = {
@@ -170,6 +306,7 @@ function calcTextArea(canvas, str, startX=0, startY=0){
             this.maxX = Math.max(this.maxX, x+r);
             this.minY = Math.min(this.minY, y-r);
             this.maxY = Math.max(this.maxY, y+r);
+            //console.log("append:", x, y, r, this);
         }
     };
     let items = [];
@@ -198,8 +335,8 @@ function calcTextArea(canvas, str, startX=0, startY=0){
             // consonant
             const nextR = ("STKP".includes(s))? canvas.kipsol.radiusVoiceless: canvas.kipsol.radiusVoiced;
             const dist = (preR ?? (-nextR)) + nextR + ((!preV)? canvas.kipsol.consonantPadding: 0);
-            const nextX = cur.X + dist * Math.cos(preD);
-            const nextY = cur.Y + dist * Math.sin(preD);
+            const nextX = cur.X + dist * Math.cos(preD / 180 * Math.PI);
+            const nextY = cur.Y + dist * Math.sin(preD / 180 * Math.PI);
             area.append(nextX, nextY, nextR);
             if(!preV){
                 items.push({
@@ -227,8 +364,8 @@ function calcTextArea(canvas, str, startX=0, startY=0){
     // end of word
     const nextR = canvas.kipsol.radiusEOW;
     const dist = (preR ?? (-nextR)) + nextR + ((!preV)? canvas.kipsol.consonantPadding: 0);
-    const nextX = cur.X + dist * Math.cos(preD);
-    const nextY = cur.Y + dist * Math.sin(preD);
+    const nextX = cur.X + dist * Math.cos(preD / 180 * Math.PI);
+    const nextY = cur.Y + dist * Math.sin(preD / 180 * Math.PI);
     area.append(nextX, nextY, nextR);
     if(!preV){
         items.push({
@@ -244,8 +381,37 @@ function calcTextArea(canvas, str, startX=0, startY=0){
         centerX: nextX,
         centerY: nextY
     });
-    console.log(items);
+    area.append(nextX, nextY, canvas.kipsol.radiusEOW);
+    //console.log(items);
     return area
+}
+
+
+
+function drawItems(canvas, itemList, offset){
+    const func_map = {
+        'Z': (x,y) => canvas.drawZ(x, y),
+        'D': (x,y) => canvas.drawD(x, y),
+        'G': (x,y) => canvas.drawG(x, y),
+        'B': (x,y) => canvas.drawB(x, y),
+        'L': (x,y) => canvas.drawL(x, y),
+        'N': (x,y) => canvas.drawN(x, y),
+        'S': (x,y) => canvas.drawS(x, y),
+        'T': (x,y) => canvas.drawT(x, y),
+        'K': (x,y) => canvas.drawK(x, y),
+        'P': (x,y) => canvas.drawP(x, y),
+    }
+    let elems = [];
+    itemList.forEach((item)=>{
+        if(item.type==="consonant"){
+            elems = elems.concat(func_map[item.str](item.centerX + offset.X, item.centerY + offset.Y));
+        }else if(item.type==="EOW"){
+            elems = elems.concat(canvas.drawEOW(item.centerX + offset.X, item.centerY + offset.Y));
+        }else if(item.type==="line"){
+            elems.push(canvas.strokeLine(item.startX + offset.X, item.startY + offset.Y, item.endX + offset.X, item.endY + offset.Y));
+        }
+    });
+    return elems
 }
 
 function drawText(canvas, str, startX=0, startY=0){
@@ -288,8 +454,8 @@ function drawText(canvas, str, startX=0, startY=0){
             // consonant
             const nextR = ("STKP".includes(s))? canvas.kipsol.radiusVoiceless: canvas.kipsol.radiusVoiced;
             const dist = (preR ?? (-nextR)) + nextR + ((!preV)? canvas.kipsol.consonantPadding: 0);
-            const nextX = cur.X + dist * Math.cos(preD);
-            const nextY = cur.Y + dist * Math.sin(preD);
+            const nextX = cur.X + dist * Math.cos(preD / 180 * Math.PI);
+            const nextY = cur.Y + dist * Math.sin(preD / 180 * Math.PI);
             elems = elems.concat(func_map[s](nextX, nextY));
             if(!preV){
                 elems.push(canvas.strokeLine(cur.X, cur.Y, nextX, nextY));
@@ -306,12 +472,12 @@ function drawText(canvas, str, startX=0, startY=0){
     // end of word
     const nextR = canvas.kipsol.radiusEOW;
     const dist = (preR ?? (-nextR)) + nextR + ((!preV)? canvas.kipsol.consonantPadding: 0);
-    const nextX = cur.X + dist * Math.cos(preD);
-    const nextY = cur.Y + dist * Math.sin(preD);
-    elems = elems.concat(canvas.drawEOW(nextX, nextY));
+    const nextX = cur.X + dist * Math.cos(preD / 180 * Math.PI);
+    const nextY = cur.Y + dist * Math.sin(preD / 180 * Math.PI);
     if(!preV){
         elems.push(canvas.strokeLine(cur.X, cur.Y, nextX, nextY));
     }
+    elems = elems.concat(canvas.drawEOW(nextX, nextY));
     return elems
 }
 
@@ -392,19 +558,36 @@ canvas.kipsol = {
     radiusPivot: 3,
     radiusVoiced: 50,
     radiusVoiceless: 25,
-    radiusEOW: 7
+    radiusEOW: 7,
+    voweldir: {
+        "I": -45,
+        "O": 0,
+        "U": 45
+    }
 }
-let area = calcTextArea(canvas, inputText);
-console.log(area);
-let elems = drawText(canvas, inputText, 50-area.minX, 50-area.minY);
-console.log(elems);
+//let area = calcTextArea(canvas, inputText);
+//console.log(inputText, area);
+let mergin = {
+    top: 25,
+    bottom: 25,
+    left: 25,
+    right: 25
+}
+let cil = calcItemList(canvas, inputText);
+console.log(cil.area, cil.items);
+canvas.setWidth(mergin.left + mergin.right + cil.area.maxX - cil.area.minX);
+canvas.setHeight(mergin.top + mergin.bottom + cil.area.maxY - cil.area.minY);
+let elems = drawItems(canvas, cil.items, {X: mergin.left-cil.area.minX, Y: mergin.top-cil.area.minY});
+
 
 inputElement.addEventListener("change", (e)=>{
     elems.forEach((elem) => {canvas.remove(elem)});
     let inputText = inputElement.value;
-    area = calcTextArea(canvas, inputText);
-console.log(area);
-    elems = drawText(canvas, inputText, 50-area.minX, 50-area.minY);
+    cil = calcItemList(canvas, inputText);
+    console.log(cil.area, cil.items);
+    canvas.setWidth(mergin.left + mergin.right + cil.area.maxX - cil.area.minX);
+    canvas.setHeight(mergin.top + mergin.bottom + cil.area.maxY - cil.area.minY);
+    elems = drawItems(canvas, cil.items, {X: mergin.left-cil.area.minX, Y: mergin.top-cil.area.minY});
 });
 
 function downloadText(fileName, text){
