@@ -60,286 +60,19 @@
         </p>
     </div>
     <script  type="text/javascript">
-/*
-fabric.Canvas.prototype.strokeLine = function(startX, startY, endX, endY, strokeWidth=1, strokeColor="black", angle=0){
-    const line = new fabric.Line([startX, startY, endX, endY], {
-        strokeWidth: strokeWidth,
-        stroke: strokeColor,
-        angle: angle
-    });
-    this.add(line);
-    return line;
-};
-fabric.Canvas.prototype.strokeCircle = function(centerX, centerY, radius, strokeWidth=1, strokeColor="black", angle=0){
-    const circle = new fabric.Circle({
-        left: centerX - radius,
-        top: centerY - radius,
-        radius: radius,
-        strokeWidth: strokeWidth,
-        stroke: strokeColor,
-        fill: null,
-        angle: angle
-    });
-    this.add(circle);
-    return circle;
-};
-fabric.Canvas.prototype.fillCircle = function(centerX, centerY, radius, strokeWidth=1, strokeColor="black", fillColor="black", angle=0){
-    const circle = new fabric.Circle({
-        left: centerX - radius,
-        top: centerY - radius,
-        radius: radius,
-        strokeWidth: strokeWidth,
-        stroke: strokeColor,
-        fill: fillColor,
-        angle: angle
-    });
-    this.add(circle);
-    return circle;
-};
-fabric.Canvas.prototype.kipsol = {
-    consonantPadding: undefined,
-    radiusPivot: undefined,
-    radiusVoiced: undefined,
-    radiusVoiceless: undefined,
-    radiusEOW: undefined
-}
-fabric.Canvas.prototype.drawZ = function(centerX, centerY){
-    let elems = [];
-    elems.push(this.strokeCircle(centerX, centerY, this.kipsol.radiusVoiced));
-    elems.push(this.fillCircle(centerX, centerY, this.kipsol.radiusPivot));
-    return elems;
-};
-fabric.Canvas.prototype.drawD = function(centerX, centerY){
-    let elems = this.drawZ(centerX, centerY);
-    const radius = this.kipsol.radiusVoiced;
-    [0, 120, 240].forEach((deg)=>{
-        rad=(-90-deg)/180*Math.PI;
-        elems.push(this.strokeLine(centerX, centerY, centerX+radius*Math.cos(rad), centerY+radius*Math.sin(rad)));
-    });
-    return elems;
-};
-fabric.Canvas.prototype.drawG = function(centerX, centerY){
-    let elems = this.drawZ(centerX, centerY);
-    const radius = this.kipsol.radiusVoiced;
-    [0, 90, 180, 270].forEach((deg)=>{
-        rad=(-90-deg)/180*Math.PI;
-        elems.push(this.strokeLine(centerX, centerY, centerX+radius*Math.cos(rad), centerY+radius*Math.sin(rad)));
-    });
-    return elems;
-};
-fabric.Canvas.prototype.drawB = function(centerX, centerY){
-    let elems = this.drawZ(centerX, centerY);
-    const radius = this.kipsol.radiusVoiced;
-    [0, 60, 120, 180, 240, 300].forEach((deg)=>{
-        rad=(-90-deg)/180*Math.PI;
-        elems.push(this.strokeLine(centerX, centerY, centerX+radius*Math.cos(rad), centerY+radius*Math.sin(rad)));
-    });
-    return elems;
-};
-fabric.Canvas.prototype.drawS = function(centerX, centerY){
-    let elems = [];
-    elems.push(this.strokeCircle(centerX, centerY, this.kipsol.radiusVoiceless));
-    elems.push(this.fillCircle(centerX, centerY, this.kipsol.radiusPivot));
-    return elems;
-};
-fabric.Canvas.prototype.drawT = function(centerX, centerY){
-    let elems = this.drawS(centerX, centerY);
-    const radius = this.kipsol.radiusVoiceless;
-    [0, 120, 240].forEach((deg)=>{
-        rad=(-90-deg)/180*Math.PI;
-        elems.push(this.strokeLine(centerX, centerY, centerX+radius*Math.cos(rad), centerY+radius*Math.sin(rad)));
-    });
-    return elems;
-};
-fabric.Canvas.prototype.drawK = function(centerX, centerY){
-    let elems = this.drawS(centerX, centerY);
-    const radius = this.kipsol.radiusVoiceless;
-    [0, 90, 180, 270].forEach((deg)=>{
-        rad=(-90-deg)/180*Math.PI;
-        elems.push(this.strokeLine(centerX, centerY, centerX+radius*Math.cos(rad), centerY+radius*Math.sin(rad)));
-    });
-    return elems;
-};
-fabric.Canvas.prototype.drawP = function(centerX, centerY){
-    let elems = this.drawS(centerX, centerY);
-    const radius = this.kipsol.radiusVoiceless;
-    [0, 60, 120, 180, 240, 300].forEach((deg)=>{
-        rad=(-90-deg)/180*Math.PI;
-        elems.push(this.strokeLine(centerX, centerY, centerX+radius*Math.cos(rad), centerY+radius*Math.sin(rad)));
-    });
-    return elems;
-};
-fabric.Canvas.prototype.drawL = function(centerX, centerY){
-    let elems = this.drawZ(centerX, centerY);
-    elems.push(this.strokeCircle(centerX, centerY, this.kipsol.radiusVoiceless));
-    return elems;
-};
-fabric.Canvas.prototype.drawN = function(centerX, centerY){
-    let elems = this.drawD(centerX, centerY);
-    elems.push(this.strokeCircle(centerX, centerY, this.kipsol.radiusVoiceless));
-    return elems;
-};
-fabric.Canvas.prototype.drawEOW = function(centerX, centerY){
-    let elems = [];
-    elems.push(this.strokeCircle(centerX, centerY, this.kipsol.radiusEOW));
-    return elems;
-};
-*/
 
 ///////////////////////////////////////////////////////////////////////////////
 /** TODO
- * protptypeを書き換えるよりclassを作る
+ * [v] protptypeを書き換えるのではなくclassを作る
  * [v] 最初の要素の描画でlineが入ることがある(cf. subulok)．最初を分けて処理したほうが良い 
  * [v] 先にオブジェクトの相対位置の計算を済ませてからリストを参照して描画したほうが良さそう
  * [v] 語末文字に線が侵入する問題
  * 文章組版の実装
  * 部位サイズ，キャンバスサイズ変更機能の実装
  * 数字，ピリオドの実装
- * 歯車モチーフなので回したい
+ * [v] 歯車モチーフなので回したい
  */
 ///////////////////////////////////////////////////////////////////////////////
-
-/*
-function drawText(canvas, str, startX=0, startY=0){
-    const func_map = {
-        'Z': (x,y) => canvas.drawZ(x, y),
-        'D': (x,y) => canvas.drawD(x, y),
-        'G': (x,y) => canvas.drawG(x, y),
-        'B': (x,y) => canvas.drawB(x, y),
-        'L': (x,y) => canvas.drawL(x, y),
-        'N': (x,y) => canvas.drawN(x, y),
-        'S': (x,y) => canvas.drawS(x, y),
-        'T': (x,y) => canvas.drawT(x, y),
-        'K': (x,y) => canvas.drawK(x, y),
-        'P': (x,y) => canvas.drawP(x, y),
-    }
-    let cur = {
-        X: startX,
-        Y: startY
-    };
-    let preR = null, preD = 0, preV = null;
-    let elems = [];
-    Array.from(str).forEach((s)=>{
-        s = s.toUpperCase();
-        if("IOU".includes(s)){
-            // vowel
-            if(preV==null){
-                console.log("Error: unexpected input (initial vowel)");
-            }
-            preV = true;
-            if(s==='I'){
-                preD = -45;
-            }else if(s==='O'){
-                preD = 0;
-            }else if(s==='U'){
-                preD = 45;
-            }else{
-                console.log("Unexpected error");
-            }
-        }else if("ZDGBLNSTKP".includes(s)){
-            // consonant
-            const nextR = ("STKP".includes(s))? canvas.kipsol.radiusVoiceless: canvas.kipsol.radiusVoiced;
-            const dist = (preR ?? (-nextR)) + nextR + ((!preV)? canvas.kipsol.consonantPadding: 0);
-            const nextX = cur.X + dist * Math.cos(preD / 180 * Math.PI);
-            const nextY = cur.Y + dist * Math.sin(preD / 180 * Math.PI);
-            elems = elems.concat(func_map[s](nextX, nextY));
-            if(!preV){
-                elems.push(canvas.strokeLine(cur.X, cur.Y, nextX, nextY));
-            }
-            preR = nextR;
-            preD = 0;
-            preV = false;
-            cur.X = nextX;
-            cur.Y = nextY;
-        }else{
-            console.log("Error: unexpected input", s);
-        }
-    });
-    // end of word
-    const nextR = canvas.kipsol.radiusEOW;
-    const dist = (preR ?? (-nextR)) + nextR + ((!preV)? canvas.kipsol.consonantPadding: 0);
-    const nextX = cur.X + dist * Math.cos(preD / 180 * Math.PI);
-    const nextY = cur.Y + dist * Math.sin(preD / 180 * Math.PI);
-    if(!preV){
-        elems.push(canvas.strokeLine(cur.X, cur.Y, nextX, nextY));
-    }
-    elems = elems.concat(canvas.drawEOW(nextX, nextY));
-    return elems
-}
-*/
-
-/*
-function drawTextbox(canvas, text, x, y, fontSize=20, width=null){
-    const textbox = new fabric.Textbox(text, {
-        top: y,
-        left: x,
-        fontSize: fontSize,
-        width: width
-    });
-    canvas.add(textbox);
-    return textbox;
-}
-*/
-
-/*
-function drawExample(){
-    const canvas0 = new fabric.Canvas('canvasExample');
-    canvas0.kipsol = {
-        consonantPadding: 10,
-        radiusPivot: 3,
-        radiusVoiced: 40,
-        radiusVoiceless: 20,
-        radiusEOW: 7
-    }
-
-    var textWidth = canvas0.kipsol.radiusVoiced*0.2;
-    var x = textWidth*2;
-
-    canvas0.setWidth(textWidth*18+canvas0.kipsol.radiusVoiced*12);
-    canvas0.setHeight(textWidth*6+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless*2);
-
-    drawTextbox(canvas0, "z", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-    drawTextbox(canvas0, "s", x+canvas0.kipsol.radiusVoiced-canvas0.kipsol.radiusVoiceless-textWidth, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-    x += textWidth;
-    canvas0.drawZ(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
-    canvas0.drawS(x + canvas0.kipsol.radiusVoiced, textWidth*4+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless);
-    x += canvas0.kipsol.radiusVoiced*2 + textWidth;
-
-    drawTextbox(canvas0, "d", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-    drawTextbox(canvas0, "t", x+canvas0.kipsol.radiusVoiced-canvas0.kipsol.radiusVoiceless-textWidth, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-    x += textWidth;
-    canvas0.drawD(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
-    canvas0.drawT(x + canvas0.kipsol.radiusVoiced, textWidth*4+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless);
-    x += canvas0.kipsol.radiusVoiced*2 + textWidth;
-
-    drawTextbox(canvas0, "g", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-    drawTextbox(canvas0, "k", x+canvas0.kipsol.radiusVoiced-canvas0.kipsol.radiusVoiceless-textWidth, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-    x += textWidth;
-    canvas0.drawG(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
-    canvas0.drawK(x + canvas0.kipsol.radiusVoiced, textWidth*4+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless);
-    x += canvas0.kipsol.radiusVoiced*2 + textWidth;
-
-    drawTextbox(canvas0, "b", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-    drawTextbox(canvas0, "p", x+canvas0.kipsol.radiusVoiced-canvas0.kipsol.radiusVoiceless-textWidth, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-    x += textWidth;
-    canvas0.drawB(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
-    canvas0.drawP(x + canvas0.kipsol.radiusVoiced, textWidth*4+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless);
-    x += canvas0.kipsol.radiusVoiced*2 + textWidth;
-
-    drawTextbox(canvas0, "l", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-    drawTextbox(canvas0, "end of word", x, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*15);
-    x += textWidth;
-    canvas0.drawL(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
-    canvas0.drawEOW(x + canvas0.kipsol.radiusVoiced, textWidth*4+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless);
-    x += canvas0.kipsol.radiusVoiced*2 + textWidth;
-
-    drawTextbox(canvas0, "n", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-    drawTextbox(canvas0, "end of centence", x, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*15);
-    x += textWidth;
-    canvas0.drawN(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
-    x += canvas0.kipsol.radiusVoiced*2 + textWidth;
-}
-*/
 
 
 const inputElement = document.getElementById('inputText');
@@ -364,7 +97,7 @@ let mergin = {
 let animationSpeed = 0;//0.2 * 1000;
 let rotateSpeed = 3 * animationSpeed / 1000;
 
-function drawExample2(){
+function drawExample(){
     let kc = new KipsolCanvas('canvasExample', kipsol_settings);
 
     let textWidth = kipsol_settings.radiusVoiced*0.2;
@@ -415,7 +148,7 @@ function drawExample2(){
     x += kipsol_settings.radiusVoiced*2 + textWidth;
 }
 
-drawExample2();
+drawExample();
 
 const kCanvas = new KipsolCanvas('canvas', kipsol_settings);
 kCanvas.canvas.setWidth(800);

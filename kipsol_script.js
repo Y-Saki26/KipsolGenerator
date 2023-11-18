@@ -302,34 +302,6 @@ class KipsolCanvas{
     }
 }
 
-/*
-function drawItems(extend_canvas, itemList, offset){
-    const func_map = {
-        'Z': (x,y) => extend_canvas.drawZ(x, y),
-        'D': (x,y) => extend_canvas.drawD(x, y),
-        'G': (x,y) => extend_canvas.drawG(x, y),
-        'B': (x,y) => extend_canvas.drawB(x, y),
-        'L': (x,y) => extend_canvas.drawL(x, y),
-        'N': (x,y) => extend_canvas.drawN(x, y),
-        'S': (x,y) => extend_canvas.drawS(x, y),
-        'T': (x,y) => extend_canvas.drawT(x, y),
-        'K': (x,y) => extend_canvas.drawK(x, y),
-        'P': (x,y) => extend_canvas.drawP(x, y),
-    }
-    let elems = [];
-    itemList.forEach((item)=>{
-        if(item.type==="consonant"){
-            elems = elems.concat(func_map[item.str](item.centerX + offset.X, item.centerY + offset.Y));
-        }else if(item.type==="EOW"){
-            elems = elems.concat(extend_canvas.drawEOW(item.centerX + offset.X, item.centerY + offset.Y));
-        }else if(item.type==="line"){
-            elems.push(extend_canvas.strokeLine(item.startX + offset.X, item.startY + offset.Y, item.endX + offset.X, item.endY + offset.Y));
-        }
-    });
-    return elems;
-}
-*/
-
 function downloadText(fileName, text){
     const blob = new Blob([text], { type: 'text/plain' });
     const aTag = document.createElement('a');
