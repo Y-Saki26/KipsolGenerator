@@ -20,28 +20,33 @@
                     <li>
                         字母<br>
                         <ul>
-                            <li><label>有声音円のサイズ: <input type="text" id="inputVoisedSize" name="inputVoisedSize" maxlength="10" size="4" value="50"/></label></li>
-                            <li><label>無声音円のサイズ: <input type="text" id="inputVoiselessSize" name="inputVoiselessSize" maxlength="10" size="4" value="25"/></label></li>
-                            <li><label>語末記号のサイズ: <input type="text" id="inputEOWSize" name="inputEOWSize" maxlength="10" size="4" value="7"/></label></li>
-                            <li><label>中心の点のサイズ: <input type="text" id="inputPivotSize" name="inputPivotSize" maxlength="10" size="4" value="3"/></label></li>
-                            <li><label>連続子音の離す距離: <input type="text" id="inputPaddingLength" name="inputPaddingLength" maxlength="10" size="4" value="10"/></label></li>
+                            <li><label>有声音円のサイズ: <input type="number" id="inputVoisedSize" name="inputVoisedSize" maxlength="10" size="4" value="50"/></label></li>
+                            <li><label>無声音円のサイズ: <input type="number" id="inputVoiselessSize" name="inputVoiselessSize" maxlength="10" size="4" value="25"/></label></li>
+                            <li><label>語末記号のサイズ: <input type="number" id="inputEOWSize" name="inputEOWSize" maxlength="10" size="4" value="7"/></label></li>
+                            <li><label>中心の点のサイズ: <input type="number" id="inputPivotSize" name="inputPivotSize" maxlength="10" size="4" value="3"/></label></li>
+                            <li><label>母音の角度: <input type="number" id="inputVowelDeg" name="inputVowelDeg" maxlength="10" size="4" value="45"/> deg.</label></li>
+                            <li><label>連続子音の離す距離: <input type="number" id="inputPaddingLength" name="inputPaddingLength" maxlength="10" size="4" value="10"/></label></li>
                         </ul>
                     </li>
                     <li>
                         余白<br>
                         <ul>
-                            <li><label>全部: <input type="text" id="inputMarginAll" name="inputMarginAll" maxlength="10" size="4" value="25"/></label></li>
-                            <li><label>上: <input type="text" id="inputMarginTop" name="inputMarginTop" maxlength="10" size="4" value="25"/></label></li>
-                            <li><label>下: <input type="text" id="inputMarginBottom" name="inputMarginBottom" maxlength="10" size="4" value="25"/></label></li>
-                            <li><label>左: <input type="text" id="inputMarginLeft" name="inputMarginLeft" maxlength="10" size="4" value="25"/></label></li>
-                            <li><label>右: <input type="text" id="inputMarginRight" name="inputMarginRight" maxlength="10" size="4" value="25"/></label></li>
+                            <li><label>全部: <input type="number" id="inputMarginAll" name="inputMarginAll" maxlength="10" size="4" value="25"/></label>
+                                <ul>
+                                    <li><label>上: <input type="number" id="inputMarginTop" name="inputMarginTop" maxlength="10" size="4" value="25"/></label></li>
+                                    <li><label>下: <input type="number" id="inputMarginBottom" name="inputMarginBottom" maxlength="10" size="4" value="25"/></label></li>
+                                    <li><label>左: <input type="number" id="inputMarginLeft" name="inputMarginLeft" maxlength="10" size="4" value="25"/></label></li>
+                                    <li><label>右: <input type="number" id="inputMarginRight" name="inputMarginRight" maxlength="10" size="4" value="25"/></label></li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>
                         アニメーション<br>
                         <ul>
-                            <li><label>速度: <input type="text" id="inputRotationSpeed" name="inputRotationSpeed" maxlength="10" size="4" value="1"/></label></li>
-                            <li><label>span: <input type="text" id="inputAnimationSpan" name="inputAnimationSpan" maxlength="10" size="4" value="1"/> sec</label></li>
+                            <li><label>速度: <input type="number" id="inputRotationSpeed" name="inputRotationSpeed" maxlength="10" size="4" value="1"/></label></li>
+                            <li><label>アニメーション間隔: <input type="number" id="inputAnimationSpan" name="inputAnimationSpan" maxlength="10" size="4" value="0"/> sec</label></li>
+                            <li><button type="button" onclick="resetRotate()">停止</button>:  <input type="number" id="inputResetRotate" name="inputResetRotate" maxlength="10" size="4" value="0"/> deg.</label></li>
                         </ul>
                     </li>
                 </ul>
@@ -168,11 +173,68 @@ function drawInputText(){
 }
 
 drawInputText();
+inputElement.addEventListener("change", drawInputText);
 
-if(animationSpeed>0)
-    setInterval(drawInputText, animationSpeed);
-else
-    inputElement.addEventListener("change", drawInputText);
+
+
+let settingElements = {};
+let intervalId;
+
+function setParams(){
+    kipsol_settings = {
+        consonantPadding: parseFloat(settingElements['inputPaddingLength'].value),
+        radiusPivot: parseFloat(settingElements['inputPivotSize'].value),
+        radiusVoiced: parseFloat(settingElements['inputVoisedSize'].value),
+        radiusVoiceless: parseFloat(settingElements['inputVoiselessSize'].value),
+        radiusEOW: parseFloat(settingElements['inputEOWSize'].value),
+        voweldir: {
+            "I": -parseFloat(settingElements['inputVowelDeg'].value),
+            "O": 0,
+            "U": parseFloat(settingElements['inputVowelDeg'].value)
+        }
+    };
+    mergin = {
+        top: parseFloat(settingElements['inputMarginTop'].value),
+        bottom: parseFloat(settingElements['inputMarginBottom'].value),
+        left: parseFloat(settingElements['inputMarginLeft'].value),
+        right: parseFloat(settingElements['inputMarginRight'].value)
+    };
+    animationSpeed = parseFloat(settingElements['inputAnimationSpan'].value) * 1000;
+    rotateSpeed = parseFloat(settingElements['inputRotationSpeed'].value) * animationSpeed / 1000;
+    console.log(kipsol_settings, mergin, animationSpeed, rotateSpeed);
+    kCanvas.kipsol_settings = kipsol_settings;
+    drawInputText();
+    
+    if(intervalId)
+        clearInterval(intervalId);
+    if(animationSpeed>0){
+        intervalId = setInterval(drawInputText, animationSpeed);
+    }
+}
+
+[
+    'inputPaddingLength','inputPivotSize','inputVoisedSize',
+    'inputVoiselessSize','inputEOWSize','inputVowelDeg',
+    "inputMarginTop","inputMarginBottom","inputMarginLeft","inputMarginRight",
+    "inputRotationSpeed","inputAnimationSpan"
+].forEach((id)=>{
+    settingElements[id] = document.getElementById(id);
+    settingElements[id].addEventListener("change", setParams);
+})
+settingElements["inputMarginAll"] = document.getElementById("inputMarginAll");
+settingElements["inputMarginAll"].addEventListener("change", () => {
+    ["inputMarginTop","inputMarginBottom","inputMarginLeft","inputMarginRight"].forEach((id) => {
+        settingElements[id].value = settingElements["inputMarginAll"].value;
+    })
+});
+
+function resetRotate(){
+    rotate = parseFloat(document.getElementById("inputResetRotate").value);
+    settingElements["inputAnimationSpan"].value = 0;
+    if(intervalId)
+        clearInterval(intervalId);
+    drawInputText();
+}
 
 function downloadAsSVG(){
     downloadText(`${inputElement.value}.svg`, kCanvas.canvas.toSVG());
