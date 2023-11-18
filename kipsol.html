@@ -6,6 +6,7 @@
 </head>
 <body>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script type="text/javascript" src="./kipsol_script.js"></script>
     <H1>Kipsol Generator</H1>
     <div>
         <p>legends:</p>
@@ -36,6 +37,13 @@
                             <li><label>右: <input type="text" id="inputMarginRight" name="inputMarginRight" maxlength="10" size="4" value="25"/></label></li>
                         </ul>
                     </li>
+                    <li>
+                        アニメーション<br>
+                        <ul>
+                            <li><label>速度: <input type="text" id="inputRotationSpeed" name="inputRotationSpeed" maxlength="10" size="4" value="1"/></label></li>
+                            <li><label>span: <input type="text" id="inputAnimationSpan" name="inputAnimationSpan" maxlength="10" size="4" value="1"/> sec</label></li>
+                        </ul>
+                    </li>
                 </ul>
             </details>
         </p>
@@ -52,7 +60,7 @@
         </p>
     </div>
     <script  type="text/javascript">
-
+/*
 fabric.Canvas.prototype.strokeLine = function(startX, startY, endX, endY, strokeWidth=1, strokeColor="black", angle=0){
     const line = new fabric.Line([startX, startY, endX, endY], {
         strokeWidth: strokeWidth,
@@ -176,6 +184,7 @@ fabric.Canvas.prototype.drawEOW = function(centerX, centerY){
     elems.push(this.strokeCircle(centerX, centerY, this.kipsol.radiusEOW));
     return elems;
 };
+*/
 
 ///////////////////////////////////////////////////////////////////////////////
 /** TODO
@@ -190,264 +199,7 @@ fabric.Canvas.prototype.drawEOW = function(centerX, centerY){
  */
 ///////////////////////////////////////////////////////////////////////////////
 
-function calcItemList(canvas, str, startX=0, startY=0){
-    let cur = {
-        X: startX,
-        Y: startY,
-        radius: 0,
-        direction: 0
-    };
-    let area = {
-        minX: 0,
-        maxX: 0,
-        minY: 0,
-        maxY: 0,
-        append: function(x, y, r){
-            this.minX = Math.min(this.minX, x-r);
-            this.maxX = Math.max(this.maxX, x+r);
-            this.minY = Math.min(this.minY, y-r);
-            this.maxY = Math.max(this.maxY, y+r);
-            //console.log("append:", x, y, r, this);
-        }
-    };
-    let items = [];
-    //console.log(area, items);
-    Array.from(str).forEach((s)=>{
-        s = s.toUpperCase();
-        if("IOU".includes(s)){
-            // vowel
-            if(items.length===0){
-                console.log("Error: unexpected input (initial vowel)");
-                errState = -1;
-                return errState;
-            }
-            if(items.slice(-1)[0].type==="vowel"){
-                console.log("Error: unexpected input (continuous vowel)", s);
-                errState = -1;
-                return errState;
-            }
-            cur.direction = canvas.kipsol.voweldir[s];
-            if(cur.direction==undefined){
-                console.log("Unexpected error", s);
-                errState = -1;
-                return errState;
-            }
-            items.push({
-                type: "vowel",
-                str: s,
-                dir: cur.direction
-            });
-        }else if("ZDGBLNSTKP".includes(s)){
-            // consonant
-            const nextR = ("STKP".includes(s))? canvas.kipsol.radiusVoiceless: canvas.kipsol.radiusVoiced;
-            let dist, nextX, nextY;
-            if(items.length===0){
-                dist = 0;
-                nextX = cur.X;
-                nextY = cur.Y;
-            }else{
-                dist = cur.radius + nextR;
-                if(items.slice(-1)[0].type==="consonant"){
-                    dist += canvas.kipsol.consonantPadding;
-                }
-                nextX = cur.X + dist * Math.cos(cur.direction / 180 * Math.PI);
-                nextY = cur.Y + dist * Math.sin(cur.direction / 180 * Math.PI);
-            }
-            if(items.length>0 && items.slice(-1)[0].type==="consonant"){
-                items.push({
-                    type: "line",
-                    startX: cur.X,
-                    startY: cur.Y,
-                    endX: nextX,
-                    endY: nextY
-                });
-            }
-            items.push({
-                type: "consonant",
-                str: s,
-                centerX: nextX,
-                centerY: nextY,
-                radius: nextR
-            });
-            area.append(nextX, nextY, nextR);
-            cur.X = nextX;
-            cur.Y = nextY;
-            cur.radius = nextR;
-            cur.direction = canvas.kipsol.voweldir["O"];
-        }else{
-            console.log("Error: unexpected input", s);
-            errState = -1;
-            return errState;
-        }
-        //console.log(area, items.slice(-1)[0]);
-    });
-    {
-        // end of word
-        const nextR = canvas.kipsol.radiusEOW;
-        let dist, nextX, nextY;
-        if(items.length===0){
-            dist = 0;
-            nextX = cur.X;
-            nextY = cur.Y;
-            console.log("Warning: blank word");
-            errState = -1;
-        }else{
-            dist = cur.radius + nextR;
-            if(items.slice(-1)[0].type==="consonant"){
-                dist += canvas.kipsol.consonantPadding;
-            }
-            nextX = cur.X + dist * Math.cos(cur.direction / 180 * Math.PI);
-            nextY = cur.Y + dist * Math.sin(cur.direction / 180 * Math.PI);
-        }
-        if(items.length>0 && items.slice(-1)[0].type==="consonant"){
-            _nxtX = cur.X + (dist - nextR) * Math.cos(cur.direction / 180 * Math.PI);
-            _nxtY = cur.Y + (dist - nextR) * Math.sin(cur.direction / 180 * Math.PI);
-            items.push({
-                type: "line",
-                startX: cur.X,
-                startY: cur.Y,
-                endX: _nxtX,
-                endY: _nxtY
-            });
-        }
-        items.push({
-            type: "EOW",
-            centerX: nextX,
-            centerY: nextY,
-            radius: nextR
-        });
-        area.append(nextX, nextY, nextR);
-        //console.log(area, items.slice(-1)[0]);
-    }
-    return {
-        items: items,
-        area: area
-    };
-}
-
-function calcTextArea(canvas, str, startX=0, startY=0){
-    let cur = {
-        X: startX,
-        Y: startY
-    };
-    let area = {
-        minX: 0,
-        maxX: 0,
-        minY: 0,
-        maxY: 0,
-        append: function(x, y, r){
-            this.minX = Math.min(this.minX, x-r);
-            this.maxX = Math.max(this.maxX, x+r);
-            this.minY = Math.min(this.minY, y-r);
-            this.maxY = Math.max(this.maxY, y+r);
-            //console.log("append:", x, y, r, this);
-        }
-    };
-    let items = [];
-    let preR = null, preD = 0, preV = null;
-    let errState = 0;
-    Array.from(str).forEach((s)=>{
-        s = s.toUpperCase();
-        if("IOU".includes(s)){
-            // vowel
-            if(preV==null){
-                console.log("Error: unexpected input (initial vowel)");
-                errState = -1;
-            }
-            preV = true;
-            if(s==='I'){
-                preD = -45;
-            }else if(s==='O'){
-                preD = 0;
-            }else if(s==='U'){
-                preD = 45;
-            }else{
-                console.log("Unexpected error");
-                errState = -1;
-            }
-        }else if("ZDGBLNSTKP".includes(s)){
-            // consonant
-            const nextR = ("STKP".includes(s))? canvas.kipsol.radiusVoiceless: canvas.kipsol.radiusVoiced;
-            const dist = (preR ?? (-nextR)) + nextR + ((!preV)? canvas.kipsol.consonantPadding: 0);
-            const nextX = cur.X + dist * Math.cos(preD / 180 * Math.PI);
-            const nextY = cur.Y + dist * Math.sin(preD / 180 * Math.PI);
-            area.append(nextX, nextY, nextR);
-            if(!preV){
-                items.push({
-                    type: "line",
-                    startX: cur.X,
-                    startY: cur.Y,
-                    endX: nextX,
-                    endY: nextY
-                });
-            }
-            items.push({
-                type: s,
-                centerX: nextX,
-                centerY: nextY
-            });
-            preR = nextR;
-            preV = false;
-            cur.X = nextX;
-            cur.Y = nextY;
-        }else{
-            console.log("Error: unexpected input", s);
-            errState = -1;
-        }
-    });
-    // end of word
-    const nextR = canvas.kipsol.radiusEOW;
-    const dist = (preR ?? (-nextR)) + nextR + ((!preV)? canvas.kipsol.consonantPadding: 0);
-    const nextX = cur.X + dist * Math.cos(preD / 180 * Math.PI);
-    const nextY = cur.Y + dist * Math.sin(preD / 180 * Math.PI);
-    area.append(nextX, nextY, nextR);
-    if(!preV){
-        items.push({
-            type: "line",
-            startX: cur.X,
-            startY: cur.Y,
-            endX: nextX,
-            endY: nextY
-        });
-    }
-    items.push({
-        type: "EOW",
-        centerX: nextX,
-        centerY: nextY
-    });
-    area.append(nextX, nextY, canvas.kipsol.radiusEOW);
-    //console.log(items);
-    return area
-}
-
-
-
-function drawItems(canvas, itemList, offset){
-    const func_map = {
-        'Z': (x,y) => canvas.drawZ(x, y),
-        'D': (x,y) => canvas.drawD(x, y),
-        'G': (x,y) => canvas.drawG(x, y),
-        'B': (x,y) => canvas.drawB(x, y),
-        'L': (x,y) => canvas.drawL(x, y),
-        'N': (x,y) => canvas.drawN(x, y),
-        'S': (x,y) => canvas.drawS(x, y),
-        'T': (x,y) => canvas.drawT(x, y),
-        'K': (x,y) => canvas.drawK(x, y),
-        'P': (x,y) => canvas.drawP(x, y),
-    }
-    let elems = [];
-    itemList.forEach((item)=>{
-        if(item.type==="consonant"){
-            elems = elems.concat(func_map[item.str](item.centerX + offset.X, item.centerY + offset.Y));
-        }else if(item.type==="EOW"){
-            elems = elems.concat(canvas.drawEOW(item.centerX + offset.X, item.centerY + offset.Y));
-        }else if(item.type==="line"){
-            elems.push(canvas.strokeLine(item.startX + offset.X, item.startY + offset.Y, item.endX + offset.X, item.endY + offset.Y));
-        }
-    });
-    return elems
-}
-
+/*
 function drawText(canvas, str, startX=0, startY=0){
     const func_map = {
         'Z': (x,y) => canvas.drawZ(x, y),
@@ -514,7 +266,9 @@ function drawText(canvas, str, startX=0, startY=0){
     elems = elems.concat(canvas.drawEOW(nextX, nextY));
     return elems
 }
+*/
 
+/*
 function drawTextbox(canvas, text, x, y, fontSize=20, width=null){
     const textbox = new fabric.Textbox(text, {
         top: y,
@@ -525,69 +279,71 @@ function drawTextbox(canvas, text, x, y, fontSize=20, width=null){
     canvas.add(textbox);
     return textbox;
 }
+*/
+
+/*
+function drawExample(){
+    const canvas0 = new fabric.Canvas('canvasExample');
+    canvas0.kipsol = {
+        consonantPadding: 10,
+        radiusPivot: 3,
+        radiusVoiced: 40,
+        radiusVoiceless: 20,
+        radiusEOW: 7
+    }
+
+    var textWidth = canvas0.kipsol.radiusVoiced*0.2;
+    var x = textWidth*2;
+
+    canvas0.setWidth(textWidth*18+canvas0.kipsol.radiusVoiced*12);
+    canvas0.setHeight(textWidth*6+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless*2);
+
+    drawTextbox(canvas0, "z", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
+    drawTextbox(canvas0, "s", x+canvas0.kipsol.radiusVoiced-canvas0.kipsol.radiusVoiceless-textWidth, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
+    x += textWidth;
+    canvas0.drawZ(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
+    canvas0.drawS(x + canvas0.kipsol.radiusVoiced, textWidth*4+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless);
+    x += canvas0.kipsol.radiusVoiced*2 + textWidth;
+
+    drawTextbox(canvas0, "d", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
+    drawTextbox(canvas0, "t", x+canvas0.kipsol.radiusVoiced-canvas0.kipsol.radiusVoiceless-textWidth, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
+    x += textWidth;
+    canvas0.drawD(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
+    canvas0.drawT(x + canvas0.kipsol.radiusVoiced, textWidth*4+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless);
+    x += canvas0.kipsol.radiusVoiced*2 + textWidth;
+
+    drawTextbox(canvas0, "g", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
+    drawTextbox(canvas0, "k", x+canvas0.kipsol.radiusVoiced-canvas0.kipsol.radiusVoiceless-textWidth, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
+    x += textWidth;
+    canvas0.drawG(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
+    canvas0.drawK(x + canvas0.kipsol.radiusVoiced, textWidth*4+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless);
+    x += canvas0.kipsol.radiusVoiced*2 + textWidth;
+
+    drawTextbox(canvas0, "b", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
+    drawTextbox(canvas0, "p", x+canvas0.kipsol.radiusVoiced-canvas0.kipsol.radiusVoiceless-textWidth, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
+    x += textWidth;
+    canvas0.drawB(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
+    canvas0.drawP(x + canvas0.kipsol.radiusVoiced, textWidth*4+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless);
+    x += canvas0.kipsol.radiusVoiced*2 + textWidth;
+
+    drawTextbox(canvas0, "l", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
+    drawTextbox(canvas0, "end of word", x, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*15);
+    x += textWidth;
+    canvas0.drawL(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
+    canvas0.drawEOW(x + canvas0.kipsol.radiusVoiced, textWidth*4+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless);
+    x += canvas0.kipsol.radiusVoiced*2 + textWidth;
+
+    drawTextbox(canvas0, "n", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
+    drawTextbox(canvas0, "end of centence", x, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*15);
+    x += textWidth;
+    canvas0.drawN(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
+    x += canvas0.kipsol.radiusVoiced*2 + textWidth;
+}
+*/
+
 
 const inputElement = document.getElementById('inputText');
-let inputText = inputElement.value;
-const canvas0 = new fabric.Canvas('canvasExample');
-canvas0.kipsol = {
-    consonantPadding: 10,
-    radiusPivot: 3,
-    radiusVoiced: 40,
-    radiusVoiceless: 20,
-    radiusEOW: 7
-}
-
-var textWidth = canvas0.kipsol.radiusVoiced*0.2;
-var x = textWidth*2;
-
-canvas0.setWidth(textWidth*18+canvas0.kipsol.radiusVoiced*12);
-canvas0.setHeight(textWidth*6+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless*2);
-
-drawTextbox(canvas0, "z", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-drawTextbox(canvas0, "s", x+canvas0.kipsol.radiusVoiced-canvas0.kipsol.radiusVoiceless-textWidth, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-x += textWidth;
-canvas0.drawZ(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
-canvas0.drawS(x + canvas0.kipsol.radiusVoiced, textWidth*4+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless);
-x += canvas0.kipsol.radiusVoiced*2 + textWidth;
-
-drawTextbox(canvas0, "d", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-drawTextbox(canvas0, "t", x+canvas0.kipsol.radiusVoiced-canvas0.kipsol.radiusVoiceless-textWidth, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-x += textWidth;
-canvas0.drawD(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
-canvas0.drawT(x + canvas0.kipsol.radiusVoiced, textWidth*4+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless);
-x += canvas0.kipsol.radiusVoiced*2 + textWidth;
-
-drawTextbox(canvas0, "g", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-drawTextbox(canvas0, "k", x+canvas0.kipsol.radiusVoiced-canvas0.kipsol.radiusVoiceless-textWidth, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-x += textWidth;
-canvas0.drawG(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
-canvas0.drawK(x + canvas0.kipsol.radiusVoiced, textWidth*4+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless);
-x += canvas0.kipsol.radiusVoiced*2 + textWidth;
-
-drawTextbox(canvas0, "b", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-drawTextbox(canvas0, "p", x+canvas0.kipsol.radiusVoiced-canvas0.kipsol.radiusVoiceless-textWidth, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-x += textWidth;
-canvas0.drawB(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
-canvas0.drawP(x + canvas0.kipsol.radiusVoiced, textWidth*4+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless);
-x += canvas0.kipsol.radiusVoiced*2 + textWidth;
-
-drawTextbox(canvas0, "l", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-drawTextbox(canvas0, "end of word", x, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*15);
-x += textWidth;
-canvas0.drawL(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
-canvas0.drawEOW(x + canvas0.kipsol.radiusVoiced, textWidth*4+canvas0.kipsol.radiusVoiced*2+canvas0.kipsol.radiusVoiceless);
-x += canvas0.kipsol.radiusVoiced*2 + textWidth;
-
-drawTextbox(canvas0, "n", x, textWidth, canvas0.kipsol.radiusVoiced*0.4, textWidth*2);
-drawTextbox(canvas0, "end of centence", x, textWidth*3+canvas0.kipsol.radiusVoiced*2, canvas0.kipsol.radiusVoiced*0.4, textWidth*15);
-x += textWidth;
-canvas0.drawN(x + canvas0.kipsol.radiusVoiced, textWidth*2+canvas0.kipsol.radiusVoiced);
-x += canvas0.kipsol.radiusVoiced*2 + textWidth;
-
-const canvas = new fabric.Canvas('canvas');
-canvas.setWidth(800);
-canvas.setHeight(500);
-canvas.kipsol = {
+let kipsol_settings = {
     consonantPadding: 10,
     radiusPivot: 3,
     radiusVoiced: 50,
@@ -598,47 +354,99 @@ canvas.kipsol = {
         "O": 0,
         "U": 45
     }
-}
-//let area = calcTextArea(canvas, inputText);
-//console.log(inputText, area);
+};
 let mergin = {
     top: 25,
     bottom: 25,
     left: 25,
     right: 25
+};
+let animationSpeed = 0;//0.2 * 1000;
+let rotateSpeed = 3 * animationSpeed / 1000;
+
+function drawExample2(){
+    let kc = new KipsolCanvas('canvasExample', kipsol_settings);
+
+    let textWidth = kipsol_settings.radiusVoiced*0.2;
+    let x = textWidth*2;
+
+    kc.canvas.setWidth(textWidth*18+kipsol_settings.radiusVoiced*12);
+    kc.canvas.setHeight(textWidth*6+kipsol_settings.radiusVoiced*2+kipsol_settings.radiusVoiceless*2);
+
+    kc.strokeTextbox("z", x, textWidth, kipsol_settings.radiusVoiced*0.4, textWidth*2);
+    kc.strokeTextbox("s", x+kipsol_settings.radiusVoiced-kipsol_settings.radiusVoiceless-textWidth, textWidth*3+kipsol_settings.radiusVoiced*2, kipsol_settings.radiusVoiced*0.4, textWidth*2);
+    x += textWidth;
+    kc.strokeZ(x + kipsol_settings.radiusVoiced, textWidth*2+kipsol_settings.radiusVoiced);
+    kc.strokeS(x + kipsol_settings.radiusVoiced, textWidth*4+kipsol_settings.radiusVoiced*2+kipsol_settings.radiusVoiceless);
+    x += kipsol_settings.radiusVoiced*2 + textWidth;
+
+    kc.strokeTextbox("d", x, textWidth, kipsol_settings.radiusVoiced*0.4, textWidth*2);
+    kc.strokeTextbox("t", x+kipsol_settings.radiusVoiced-kipsol_settings.radiusVoiceless-textWidth, textWidth*3+kipsol_settings.radiusVoiced*2, kipsol_settings.radiusVoiced*0.4, textWidth*2);
+    x += textWidth;
+    kc.strokeD(x + kipsol_settings.radiusVoiced, textWidth*2+kipsol_settings.radiusVoiced);
+    kc.strokeT(x + kipsol_settings.radiusVoiced, textWidth*4+kipsol_settings.radiusVoiced*2+kipsol_settings.radiusVoiceless);
+    x += kipsol_settings.radiusVoiced*2 + textWidth;
+
+    kc.strokeTextbox("g", x, textWidth, kipsol_settings.radiusVoiced*0.4, textWidth*2);
+    kc.strokeTextbox("k", x+kipsol_settings.radiusVoiced-kipsol_settings.radiusVoiceless-textWidth, textWidth*3+kipsol_settings.radiusVoiced*2, kipsol_settings.radiusVoiced*0.4, textWidth*2);
+    x += textWidth;
+    kc.strokeG(x + kipsol_settings.radiusVoiced, textWidth*2+kipsol_settings.radiusVoiced);
+    kc.strokeK(x + kipsol_settings.radiusVoiced, textWidth*4+kipsol_settings.radiusVoiced*2+kipsol_settings.radiusVoiceless);
+    x += kipsol_settings.radiusVoiced*2 + textWidth;
+
+    kc.strokeTextbox("b", x, textWidth, kipsol_settings.radiusVoiced*0.4, textWidth*2);
+    kc.strokeTextbox("p", x+kipsol_settings.radiusVoiced-kipsol_settings.radiusVoiceless-textWidth, textWidth*3+kipsol_settings.radiusVoiced*2, kipsol_settings.radiusVoiced*0.4, textWidth*2);
+    x += textWidth;
+    kc.strokeB(x + kipsol_settings.radiusVoiced, textWidth*2+kipsol_settings.radiusVoiced);
+    kc.strokeP(x + kipsol_settings.radiusVoiced, textWidth*4+kipsol_settings.radiusVoiced*2+kipsol_settings.radiusVoiceless);
+    x += kipsol_settings.radiusVoiced*2 + textWidth;
+
+    kc.strokeTextbox("l", x, textWidth, kipsol_settings.radiusVoiced*0.4, textWidth*2);
+    kc.strokeTextbox("end of word", x, textWidth*3+kipsol_settings.radiusVoiced*2, kipsol_settings.radiusVoiced*0.4, textWidth*15);
+    x += textWidth;
+    kc.strokeL(x + kipsol_settings.radiusVoiced, textWidth*2+kipsol_settings.radiusVoiced);
+    kc.strokeEOW(x + kipsol_settings.radiusVoiced, textWidth*4+kipsol_settings.radiusVoiced*2+kipsol_settings.radiusVoiceless);
+    x += kipsol_settings.radiusVoiced*2 + textWidth;
+
+    kc.strokeTextbox("n", x, textWidth, kipsol_settings.radiusVoiced*0.4, textWidth*2);
+    kc.strokeTextbox("end of centence", x, textWidth*3+kipsol_settings.radiusVoiced*2, kipsol_settings.radiusVoiced*0.4, textWidth*15);
+    x += textWidth;
+    kc.strokeN(x + kipsol_settings.radiusVoiced, textWidth*2+kipsol_settings.radiusVoiced);
+    x += kipsol_settings.radiusVoiced*2 + textWidth;
 }
-let cil = calcItemList(canvas, inputText);
-console.log(cil.area, cil.items);
-canvas.setWidth(mergin.left + mergin.right + cil.area.maxX - cil.area.minX);
-canvas.setHeight(mergin.top + mergin.bottom + cil.area.maxY - cil.area.minY);
-let elems = drawItems(canvas, cil.items, {X: mergin.left-cil.area.minX, Y: mergin.top-cil.area.minY});
 
+drawExample2();
 
-inputElement.addEventListener("change", (e)=>{
-    elems.forEach((elem) => {canvas.remove(elem)});
+const kCanvas = new KipsolCanvas('canvas', kipsol_settings);
+kCanvas.canvas.setWidth(800);
+kCanvas.canvas.setHeight(500);
+let rotate = 0;
+
+function drawInputText(){
+    kCanvas.canvas.remove(...kCanvas.canvas.getObjects())
     let inputText = inputElement.value;
-    cil = calcItemList(canvas, inputText);
+    let cil = calcItemList(kipsol_settings, inputText);
     console.log(cil.area, cil.items);
-    canvas.setWidth(mergin.left + mergin.right + cil.area.maxX - cil.area.minX);
-    canvas.setHeight(mergin.top + mergin.bottom + cil.area.maxY - cil.area.minY);
-    elems = drawItems(canvas, cil.items, {X: mergin.left-cil.area.minX, Y: mergin.top-cil.area.minY});
-});
-
-function downloadText(fileName, text){
-    const blob = new Blob([text], { type: 'text/plain' });
-    const aTag = document.createElement('a');
-    aTag.href = URL.createObjectURL(blob);
-    aTag.target = '_blank';
-    aTag.download = fileName;
-    aTag.click();
-    URL.revokeObjectURL(aTag.href);
+    kCanvas.canvas.setWidth(mergin.left + mergin.right + cil.area.maxX - cil.area.minX);
+    kCanvas.canvas.setHeight(mergin.top + mergin.bottom + cil.area.maxY - cil.area.minY);
+    kCanvas.drawItems(cil.items, {X: mergin.left-cil.area.minX, Y: mergin.top-cil.area.minY, R: rotate});
+    rotate += rotateSpeed;
+    rotate %= 360;
 }
+
+drawInputText();
+
+if(animationSpeed>0)
+    setInterval(drawInputText, animationSpeed);
+else
+    inputElement.addEventListener("change", drawInputText);
+
 function downloadAsSVG(){
-    downloadText(`${inputElement.value}.svg`, canvas.toSVG());
+    downloadText(`${inputElement.value}.svg`, kCanvas.canvas.toSVG());
 }
 function downloadAsJSON(){
-    downloadText(`${inputElement.value}.json`, JSON.stringify(canvas));
+    downloadText(`${inputElement.value}.json`, JSON.stringify(kCanvas.canvas));
 }
-    </script>
+</script>
 </body>
 </html>
