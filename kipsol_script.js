@@ -258,7 +258,7 @@ class KipsolCanvas{
         return elems;
     }
     strokeN(centerX, centerY, rotate=0){
-        let elems = this.strokeD(centerX, centerY);
+        let elems = this.strokeD(centerX, centerY, rotate);
         elems.push(this.strokeCircle(centerX, centerY, this.kipsol_settings.radiusVoiceless));
         return elems;
     }
