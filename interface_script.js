@@ -8,6 +8,7 @@
  * [v] 部位サイズ，キャンバスサイズ変更機能の実装
  * 数字，ピリオドの実装
  * [v] 歯車モチーフなので回したい
+ * オブジェクトのグループ化
  */
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -98,6 +99,17 @@ function drawInputText(){
     console.log(cil.area, cil.items);
     kCanvas.canvas.setWidth(mergin.left + mergin.right + cil.area.maxX - cil.area.minX);
     kCanvas.canvas.setHeight(mergin.top + mergin.bottom + cil.area.maxY - cil.area.minY);
+    kCanvas.canvas.add(new fabric.Rect({
+        left: 0,
+        top: 0,
+        width: mergin.left + mergin.right + cil.area.maxX - cil.area.minX,
+        height: mergin.top + mergin.bottom + cil.area.maxY - cil.area.minY,
+        angle: 0,
+        strokeWidth: 0,
+        stroke: 'white',
+        fill: 'whilte',
+        selectable: false
+    }))
     kCanvas.drawItems(cil.items, {X: mergin.left-cil.area.minX, Y: mergin.top-cil.area.minY, R: rotate});
     rotate += rotateSpeed;
     rotate %= 360;
